@@ -26,7 +26,7 @@
                     <label>验证码</label>
                     <el-row :gutter="10">
                         <el-col :span="15">
-                            <el-input v-model.number="ruleForm.code" minlength="6" maxlength="6"></el-input>
+                            <el-input v-model="ruleForm.code" minlength="6" maxlength="6"></el-input>
                         </el-col>
                         <el-col :span="9">
                             <el-button type="success" class="block">获取验证码</el-button>
@@ -42,12 +42,15 @@
     </div>
 </template>
 <script>
-import { stripscript, validateEmail, validatePass, validateVCode } from '@/utils/validate'
+import service from "@/utils/request"
+import {  } from '@/api/login'
+import { reactive, ref, isRef, toRef, onMounted } from '@vue/composition-api';
+import { stripscript, validateEmail, validatePass, validateVCode } from '@/utils/validate';
 export default {
     name: 'login',
-    data(){
+    setup(props, context) {
         //验证用户名为邮箱
-        var validateUsername = (rule, value, callback) => {
+        let validateUsername = (rule, value, callback) => {
             if (value === '') {
                 callback(new Error('请输入用户名'));
             } else if(validateEmail(value)) {
@@ -57,10 +60,10 @@ export default {
             }
         };
         //验证密码
-        var validatePassword = (rule, value, callback) => {
+        let validatePassword = (rule, value, callback) => {
             //过滤后的数据
-            this.ruleForm.password = stripscript(value);
-            value = this.ruleForm.password;
+            ruleForm.password = stripscript(value);
+            value = ruleForm.password;
 
             if (value === '') {
                 callback(new Error('请输入密码'));
@@ -71,26 +74,26 @@ export default {
             }
         };
         //验证重复密码
-        var validatePasswords = (rule, value, callback) => {
+        let validatePasswords = (rule, value, callback) => {
             //如果模块值为login,直接通过
-            if(this.model === 'login') { callback(); }
+            if(model.value === 'login') { callback(); }
             //过滤后的数据
-            this.ruleForm.passwords = stripscript(value);
-            value = this.ruleForm.passwords;
+            ruleForm.passwords = stripscript(value);
+            value = ruleForm.passwords;
 
             if (value === '') {
                 callback(new Error('请再次输入密码'));
-            } else if (value != this.ruleForm.password) {
+            } else if (value != ruleForm.password) {
                 callback(new Error('重复密码不正确'));
             } else {
                 callback();
             }
         };
         //验证验证码
-        var validateCode = (rule, value, callback) => {
+        let validateCode = (rule, value, callback) => {
             //过滤后的数据
-            this.ruleForm.code = stripscript(value);
-            value = this.ruleForm.code;
+            ruleForm.code = stripscript(value);
+            value = ruleForm.code;
             
             if (value === '') {
                 return callback(new Error('请输入验证码'));
@@ -100,53 +103,53 @@ export default {
                 callback();
             }
         };
-        return {
-            menuTab: [
-                {txt: '登录', current: true, type: 'login'},
-                {txt: '注销', current: false, type: 'register'}
+        /**
+         * 声明数据
+         */
+        //这里面放置data数据、生命周期、自定义的函数
+        const menuTab = reactive([
+            {txt: '登录', current: true, type: 'login'},
+            {txt: '注销', current: false, type: 'register'}
+        ]);
+        //模块值
+        const model = ref('login');
+        //表单绑定数据
+        const ruleForm = reactive({
+            username: '',
+            password: '',
+            passwords: '',
+            code: ''
+        });
+        //表单的验证
+        const rules = reactive({
+            username: [
+                { validator: validateUsername, trigger: 'blur' }
             ],
-            //模块值
-            model: 'register',
-            //表单数据
-            ruleForm: {
-                username: '',
-                password: '',
-                passwords: '',
-                code: ''
-            },
-            rules: {
-                username: [
-                    { validator: validateUsername, trigger: 'blur' }
-                ],
-                password: [
-                    { validator: validatePassword, trigger: 'blur' }
-                ],
-                passwords: [
-                    { validator: validatePasswords, trigger: 'blur' }
-                ],
-                code: [
-                    { validator: validateCode, trigger: 'blur' }
-                ]
-            }
-        }
-    },
-    created(){},
-    mounted(){},
-    //写函数的地方
-    methods: {
-        //vue 数据驱动视图渲染
-        //js 操作 DOM元素
-        toggleMenu(data) {
-            this.menuTab.forEach(element => {
+            password: [
+                { validator: validatePassword, trigger: 'blur' }
+            ],
+            passwords: [
+                { validator: validatePasswords, trigger: 'blur' }
+            ],
+            code: [
+                { validator: validateCode, trigger: 'blur' }
+            ]
+        });
+
+        /**
+         * 声明函数
+         */
+        const toggleMenu = (data => {
+            menuTab.forEach((element, index) => {
                 element.current = false;
             });
             //高光
             data.current = true;
             //修改模块值
-            this.model = data.type;
-        },
-        submitForm(formName) {
-            this.$refs[formName].validate((valid) => {
+            model.value = data.type;
+        });
+        const submitForm = (formName => {
+            context.refs[formName].validate((valid) => {
                 if (valid) {
                     alert('submit!');
                 } else {
@@ -154,7 +157,30 @@ export default {
                     return false;
                 }
             });
+        })
+        /**
+         * 生命周期
+         */
+        //挂载完成后
+        onMounted(() => {
+
+        });
+
+        return {
+            menuTab,
+            model,
+            ruleForm,
+            rules,
+            toggleMenu,
+            submitForm
         }
+
+    },
+    created(){},
+    //写函数的地方
+    methods: {
+        //vue 数据驱动视图渲染
+        //js 操作 DOM元素
     }
 }
 </script>
