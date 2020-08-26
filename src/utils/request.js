@@ -26,8 +26,8 @@ service.interceptors.request.use(function (config) {
     // sui
     // 业务需求
     // 最终目地不是在请求头添加参数
-    config.headers['Tokey'] = getToKen()
-    config.headers['UserName'] = getUserName()
+    //config.headers['Tokey'] = getToKen()
+    //config.headers['UserName'] = getUserName()
 
     return config;
 }, function (error) {
@@ -41,16 +41,16 @@ service.interceptors.request.use(function (config) {
  */
 service.interceptors.response.use(function (response) {
     // 对响应数据做点什么
-    let data = response.data
+    //let data = response.data
     // 业务需求
-
-    if(data.resCode !== 0) {
-        Message.error(data.message);
-        return Promise.reject(data);
-    }else{
-        return response;
-        // return Promise.resolve(data);
-    }
+    return response;
+    // if(data.resCode !== 0) {
+    //     Message.error(data.message);
+    //     return Promise.reject(data);
+    // }else{
+    //     return response;
+    //     // return Promise.resolve(data);
+    // }
 
 }, function (error) {
     // 对响应错误做点什么

@@ -29,7 +29,7 @@
                             <el-input v-model="ruleForm.code" minlength="6" maxlength="6"></el-input>
                         </el-col>
                         <el-col :span="9">
-                            <el-button type="success" class="block">获取验证码</el-button>
+                            <el-button type="success" class="block" @click="getSms()">获取验证码</el-button>
                         </el-col>
                     </el-row>
                     
@@ -42,8 +42,8 @@
     </div>
 </template>
 <script>
-import service from "@/utils/request"
-import {  } from '@/api/login'
+//import service from "@/utils/request"
+import { GetSms } from '@/api/login'
 import { reactive, ref, isRef, toRef, onMounted } from '@vue/composition-api';
 import { stripscript, validateEmail, validatePass, validateVCode } from '@/utils/validate';
 export default {
@@ -109,7 +109,7 @@ export default {
         //这里面放置data数据、生命周期、自定义的函数
         const menuTab = reactive([
             {txt: '登录', current: true, type: 'login'},
-            {txt: '注销', current: false, type: 'register'}
+            {txt: '注册', current: false, type: 'register'}
         ]);
         //模块值
         const model = ref('login');
@@ -148,6 +148,17 @@ export default {
             //修改模块值
             model.value = data.type;
         });
+        /**
+         * 获取验证码
+         */
+        const getSms = (() => {
+            alert(11111)
+            GetSms({username: ruleForm.username});
+        });
+
+        /**
+         * 提交表单
+         */
         const submitForm = (formName => {
             context.refs[formName].validate((valid) => {
                 if (valid) {
@@ -163,7 +174,7 @@ export default {
          */
         //挂载完成后
         onMounted(() => {
-
+            
         });
 
         return {
@@ -172,7 +183,8 @@ export default {
             ruleForm,
             rules,
             toggleMenu,
-            submitForm
+            submitForm,
+            getSms
         }
 
     },
