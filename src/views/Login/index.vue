@@ -8,13 +8,13 @@
             <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" class="login-form" size="medium">
 
                 <el-form-item prop="username" class="item-form">
-                    <label>邮箱</label>
-                    <el-input type="text" v-model="ruleForm.username" autocomplete="off"></el-input>
+                    <label for="username">邮箱</label>
+                    <el-input id="username" type="text" v-model="ruleForm.username" autocomplete="off"></el-input>
                 </el-form-item>
 
                 <el-form-item prop="password" class="item-form">
-                    <label>密码</label>
-                    <el-input type="password" v-model="ruleForm.password" autocomplete="off" minlength="6" maxlength="20"></el-input>
+                    <label for="password">密码</label>
+                    <el-input id="password" type="password" v-model="ruleForm.password" autocomplete="off" minlength="6" maxlength="20"></el-input>
                 </el-form-item>
 
                 <el-form-item prop="passwords" class="item-form" v-show="model === 'register'">
@@ -35,7 +35,7 @@
                     
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="danger" @click="submitForm('ruleForm')" class="login-btn block">提交</el-button>
+                    <el-button type="danger" @click="submitForm('ruleForm')" class="login-btn block" :disabled="loginButtonStatus">{{model === 'login'? "登录": "注册"}}</el-button>
                 </el-form-item>
             </el-form>
         </div>
@@ -48,7 +48,18 @@ import { reactive, ref, isRef, toRef, onMounted } from '@vue/composition-api';
 import { stripscript, validateEmail, validatePass, validateVCode } from '@/utils/validate';
 export default {
     name: 'login',
-    setup(props, context) {
+    //setup(props, context) {
+        //console.log(context);
+        /**
+         *  attrs: (...) == this.$attrs
+            emit: (...) == this.$emit
+            isServer: (...) == 
+            listeners: (...) == this.$listeners
+            parent: (...) == this.parent
+            refs: (...) == this.refs
+            root: (...) == this
+         */
+    setup(props, { refs, root }){
         //验证用户名为邮箱
         let validateUsername = (rule, value, callback) => {
             if (value === '') {
@@ -113,6 +124,8 @@ export default {
         ]);
         //模块值
         const model = ref('login');
+        //登录按钮禁用状态
+        const loginButtonStatus = ref(true);
         //表单绑定数据
         const ruleForm = reactive({
             username: '',
@@ -152,8 +165,26 @@ export default {
          * 获取验证码
          */
         const getSms = (() => {
-            alert(11111)
-            GetSms({username: ruleForm.username});
+            //进行提示
+            if(ruleForm.username == '') {
+                root.$message.error('邮箱不能为空！');
+                return false;
+            }
+
+            if(validateEmail(ruleForm.username)) {
+                root.$message.error('邮箱格式有误，请重新输入！');
+                return false;
+            }
+            //获取验证码
+            let requestData = {
+                username: ruleForm.username,
+                module: 'login'
+            }
+            GetSms(requestData).then(response => {
+                console.log(response);
+            }).catch(error => {
+                console.log(error);
+            });
         });
 
         /**
@@ -184,7 +215,8 @@ export default {
             rules,
             toggleMenu,
             submitForm,
-            getSms
+            getSms,
+            loginButtonStatus
         }
 
     },
