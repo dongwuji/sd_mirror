@@ -5,7 +5,7 @@
                 <li v-for="item in menuTab" :key="item.id" :class="{'current': item.current}" @click="toggleMenu(item)">{{ item.txt }}</li>
             </ul>
             <!-- 表单 start -->
-            <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" class="login-form" size="medium">
+            <el-form :model="ruleForm" status-icon :rules="rules" ref="loginForm" class="login-form" size="medium">
 
                 <el-form-item prop="username" class="item-form">
                     <label for="username">邮箱</label>
@@ -29,13 +29,13 @@
                             <el-input v-model="ruleForm.code" minlength="6" maxlength="6"></el-input>
                         </el-col>
                         <el-col :span="9">
-                            <el-button type="success" class="block" @click="getSms()">获取验证码</el-button>
+                            <el-button type="success" class="block" @click="getSms()" :disabled="codeButtonStatus.status">{{codeButtonStatus.text}}</el-button>
                         </el-col>
                     </el-row>
                     
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="danger" @click="submitForm('ruleForm')" class="login-btn block" :disabled="loginButtonStatus">{{model === 'login'? "登录": "注册"}}</el-button>
+                    <el-button type="danger" @click="submitForm('loginForm')" class="login-btn block" :disabled="loginButtonStatus">{{model === 'login'? "登录": "注册"}}</el-button>
                 </el-form-item>
             </el-form>
         </div>
@@ -43,7 +43,8 @@
 </template>
 <script>
 //import service from "@/utils/request"
-import { GetSms } from '@/api/login'
+import { Message } from 'element-ui'
+import { GetSms,Register } from '@/api/login'
 import { reactive, ref, isRef, toRef, onMounted } from '@vue/composition-api';
 import { stripscript, validateEmail, validatePass, validateVCode } from '@/utils/validate';
 export default {
@@ -55,8 +56,8 @@ export default {
             emit: (...) == this.$emit
             isServer: (...) == 
             listeners: (...) == this.$listeners
-            parent: (...) == this.parent
-            refs: (...) == this.refs
+            parent: (...) == this.$parent
+            refs: (...) == this.$refs
             root: (...) == this
          */
     setup(props, { refs, root }){
@@ -126,6 +127,15 @@ export default {
         const model = ref('login');
         //登录按钮禁用状态
         const loginButtonStatus = ref(true);
+        //验证码按钮状态
+        const codeButtonStatus = reactive(
+            {
+                status: false,
+                text: '获取验证码'
+            }
+        )
+        //倒计时
+        const timer = ref(null);
         //表单绑定数据
         const ruleForm = reactive({
             username: '',
@@ -160,6 +170,9 @@ export default {
             data.current = true;
             //修改模块值
             model.value = data.type;
+            //重置表单
+            //2.0this.$refs[formName].resetFields();
+            refs.loginForm.resetFields();
         });
         /**
          * 获取验证码
@@ -178,28 +191,87 @@ export default {
             //获取验证码
             let requestData = {
                 username: ruleForm.username,
-                module: 'login'
+                module: model.value
             }
-            GetSms(requestData).then(response => {
-                console.log(response);
-            }).catch(error => {
-                console.log(error);
-            });
+            //修改获取验证码的状态
+            codeButtonStatus.status = true;
+            codeButtonStatus.text = '发送中'
+            // codeButtonStatus.value = true;
+            // codeButtonText.value = '发送中'
+
+            setTimeout(() => {
+                GetSms(requestData).then(response => {
+                    let data = response.data
+                    root.$message({
+                        message: data.message,
+                        type: 'success'
+                    });
+                    //启用登录或注册按钮
+                    loginButtonStatus.value = false;
+                    //调定时器，倒计时
+                    countDown(60);
+                }).catch(error => {
+                    console.log(error);
+                });
+            }, 3000);
+
+
+            
         });
 
         /**
          * 提交表单
          */
         const submitForm = (formName => {
-            context.refs[formName].validate((valid) => {
+            refs[formName].validate((valid) => {
                 if (valid) {
-                    alert('submit!');
+                    let requestData = {
+                        username: ruleForm.username,
+                        password: ruleForm.password,
+                        code: ruleForm.code,
+                        model: 'register'
+                    }
+                    Register(requestData).then(response => {
+                        let data = response.data
+                        root.$message({
+                            message: data.message,
+                            type: "success"
+                        })
+                    }).catch(error => {
+
+                    });
                 } else {
                     console.log('error submit!!');
                     return false;
                 }
             });
         })
+
+        /**
+         * 倒计时
+         */
+        const countDown = ((number)=>{
+
+            //setTimeout:clearTimeout(变量) 只执行一次
+            //setInterval：clearInterval不断地执行 需要条件才能停止
+
+            let time = number;
+            timer.value = setInterval(() => {
+                time--
+                console.log(time);
+                if(time === 0) {
+                    clearInterval(timer.value);
+                    codeButtonStatus.status = false;
+                    codeButtonStatus.text = '再次获取'
+                }else{
+                    codeButtonStatus.text = `倒计时${time}秒` //'倒计时' + time +'秒'
+                }
+            }, 1000)
+
+
+
+        })
+
         /**
          * 生命周期
          */
@@ -216,7 +288,8 @@ export default {
             toggleMenu,
             submitForm,
             getSms,
-            loginButtonStatus
+            loginButtonStatus,
+            codeButtonStatus
         }
 
     },
